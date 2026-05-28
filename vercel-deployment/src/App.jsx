@@ -508,16 +508,16 @@ export default function App() {
   const updateTrainer=(idx,v)=>setTrainers(trainers.map((t,i)=>i===idx?v:t));
   const deleteTrainer=(idx)=>{ if(trainers.length<=1){notify("Need at least 1 trainer","err");return;} setTrainers(trainers.filter((_,i)=>i!==idx)); };
 
-  // ── GEMINI API — calls serverless proxy at /api/ai (keep key server-side)
+  // ── AI proxy — calls serverless endpoint at /api/ai (keep the key server-side)
 
   const GYM_PERSONA = `You are a friendly, experienced gym business coach named Alex. You work closely with gym owners and speak like a real person — warm, direct, and practical. You use simple language, short sentences, and occasional emojis. You never sound robotic or give generic textbook answers. You always give specific, actionable advice based on the gym's actual data. You understand the Indian gym market well.`;
 
-  // ── Core Gemini caller — used everywhere in the app ───────────────────────
-  const geminiCall = async (prompt, systemOverride) => {
+  // ── Core AI caller — used everywhere in the app ───────────────────────
+  const aiCall = async (prompt, systemOverride) => {
     const systemText = systemOverride || GYM_PERSONA;
     const fullPrompt = `${systemText}\n\n${prompt}`;
 
-    // First try the Google proxy
+    // First try the Groq proxy
     try {
       const res = await fetch(`/api/ai`, {
         method: "POST",
@@ -594,7 +594,7 @@ export default function App() {
   const callAI = async (prompt, sys) => {
     setAiLoading(true); setAiOutput("");
     try {
-      const result = await geminiCall(prompt, sys);
+      const result = await aiCall(prompt, sys);
       setAiOutput(result);
     } catch(e) {
       setAiOutput("❌ AI error: " + e.message);
@@ -812,7 +812,7 @@ export default function App() {
   const runAI = async (prompt, system, setOut, setLoad) => {
     setLoad(true); setOut("");
     try {
-      const result = await geminiCall(prompt, system);
+      const result = await aiCall(prompt, system);
       setOut(result);
     } catch(e) {
       setOut("❌ Error: " + e.message);
@@ -828,7 +828,7 @@ export default function App() {
     setAiLoading(true);
     try {
       const context = `The gym is called "${gymName}". It has ${members.length} members. Active: ${active_ai}. At-risk: ${atRiskN_ai}. Lost: ${lostN_ai}. Monthly revenue: ${rupees(revenue)}. Retention rate: ${retention_ai}%. Use this context to give specific advice.`;
-      const result = await geminiCall(q, `${GYM_PERSONA}\n\nGym context: ${context}`);
+      const result = await aiCall(q, `${GYM_PERSONA}\n\nGym context: ${context}`);
       setChatHistory(h=>[...h,{role:"ai",text:result}]);
     } catch(e) {
       setChatHistory(h=>[...h,{role:"ai",text:"❌ Error: "+e.message}]);
@@ -900,7 +900,7 @@ export default function App() {
                   setChatHistory(h=>[...h,{role:"user",text:a.l}]);
                   setAiLoading(true);
                   try {
-                    const result = await geminiCall(a.t);
+                    const result = await aiCall(a.t);
                     setChatHistory(h=>[...h,{role:"ai",text:result}]);
                   } catch(e) {
                     setChatHistory(h=>[...h,{role:"ai",text:"❌ Error: "+e.message}]);

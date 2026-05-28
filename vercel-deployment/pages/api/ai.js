@@ -1,5 +1,6 @@
 // pages/api/ai.js
-// Vercel Serverless Function — proxy for Groq Cloud API
+// Vercel Serverless Function — proxy for Groq Cloud AI (OpenAI-compatible)
+// Uses GROQ_API_KEY and optional GROQ_MODEL.
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
