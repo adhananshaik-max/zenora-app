@@ -508,7 +508,7 @@ export default function App() {
   const updateTrainer=(idx,v)=>setTrainers(trainers.map((t,i)=>i===idx?v:t));
   const deleteTrainer=(idx)=>{ if(trainers.length<=1){notify("Need at least 1 trainer","err");return;} setTrainers(trainers.filter((_,i)=>i!==idx)); };
 
-  // ── GROQ CLOUD API KEY — replace with your own if needed ─────────────────────
+  // ── GROQ CLOUD API KEY — use env var to avoid committing secrets ────────────
   const GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY;
   const GROQ_URL = `https://api.groq.com/openai/v1/chat/completions`;
 
@@ -518,6 +518,13 @@ export default function App() {
   const geminiCall = async (prompt, systemOverride) => {
     const systemText = systemOverride || GYM_PERSONA;
     const fullPrompt = `${systemText}\n\n${prompt}`;
+    // If the GROQ key is not set, provide a safe local fallback
+    if(!GROQ_KEY) {
+      console.warn("GROQ key missing — using local AI fallback");
+      const preview = (prompt||"").toString().slice(0,400);
+      return `Local AI (fallback): Groq API key not configured. Prompt preview: ${preview}`;
+    }
+
     const res = await fetch(GROQ_URL, {
       method: "POST",
       headers: { 
