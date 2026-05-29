@@ -5,12 +5,12 @@ class MyDocument extends Document {
     return (
       <Html lang="en">
         <Head>
-            <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-            <link rel="icon" type="image/png" href="/icon.png" />
-          <link rel="manifest" href="/manifest.json" />
-          <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
-          <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
-          <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+            <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
+            <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
+            <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+            <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+            <link rel="shortcut icon" type="image/png" href="/icon-192.png" />
+            <link rel="manifest" href="/manifest.json" />
           <meta name="theme-color" content="#08051a" />
           <meta name="mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-capable" content="yes" />
