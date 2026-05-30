@@ -514,15 +514,56 @@ export default function App() {
 
   const GYM_PERSONA = `You are a friendly, experienced gym business coach named Alex. You work closely with gym owners and speak like a real person — warm, direct, and practical. You use simple language, short sentences, and occasional emojis. You never sound robotic or give generic textbook answers. You always give specific, actionable advice based on the gym's actual data. You understand the Indian gym market well.`;
 
+  // ── Local AI generator (simple rules + templates) ────────────────────────
+  const generateLocalAI = (prompt, systemText) => {
+    const p = (prompt || "").toString().toLowerCase();
+    const summary = `Gym: ${gymName || 'Unnamed'} · Members: ${members.length} · Revenue: ${rupees(revenue)} · Retention: ${Math.round(members.filter(m=>m.attendance.slice(-30).filter(x=>x).length>0).length/members.length*100||0)}%`;
+
+    const tips = (items) => items.map((t,i)=>`${i+1}. ${t}`).join('\n');
+
+    if(p.includes('retain') || p.includes('retention') || p.includes('renew')){
+      return `Local AI (offline) — Retention suggestions:\n${summary}\n\n${tips([
+        'Call or message members 7 days before expiry with a personalized offer',
+        'Introduce small loyalty add-ons (free PT session or class) for renewals',
+        'Run a re-engagement campaign for low-attendance members with a 7-day challenge',
+        'Offer limited-time family or referral discounts to boost renewals',
+        'Follow-up unpaid members quickly and offer small payment plans'
+      ])}`;
+    }
+
+    if(p.includes('revenue') || p.includes('price') || p.includes('pricing')){
+      return `Local AI (offline) — Revenue ideas:\n${summary}\n\n${tips([
+        'Add a mid-tier plan with 6-month pricing to increase ARPU',
+        'Bundle PT sessions as add-ons and promote via WhatsApp',
+        'Run a short paid campaign targeting local audiences with a free trial',
+        'Introduce a small sign-up fee and sweeten first month with a discount',
+        'Upsell nutrition or coaching packages to existing members'
+      ])}`;
+    }
+
+    // Chat-like default: summarize context and give 5 actionable suggestions
+    return `Local AI (offline) — Quick plan:\n${summary}\n\n${tips([
+      'Audit your top 20% members — ask what they love and double down',
+      'Message expiring members with a personal note + one-click payment link',
+      'Run a 7-day re-engagement challenge for inactive members',
+      'Offer 1:1 sessions as a paid upgrade and test pricing on 10 clients',
+      'Collect referrals: give both referrer and referee a discount'
+    ])}`;
+  };
+
   // ── Core Groq caller — used everywhere in the app ───────────────────────
   const geminiCall = async (prompt, systemOverride) => {
     const systemText = systemOverride || GYM_PERSONA;
     const fullPrompt = `${systemText}\n\n${prompt}`;
-    // If the GROQ key is not set, provide a safe local fallback
+    // If the GROQ key is not set, provide a richer local fallback
     if(!GROQ_KEY) {
-      console.warn("GROQ key missing — using local AI fallback");
-      const preview = (prompt||"").toString().slice(0,400);
-      return `Local AI (fallback): Groq API key not configured. Prompt preview: ${preview}`;
+      console.warn("GROQ key missing — using richer local AI fallback");
+      try {
+        return generateLocalAI(prompt, systemText);
+      } catch(err) {
+        const preview = (prompt||"").toString().slice(0,400);
+        return `Local AI (fallback): Groq API key not configured. Prompt preview: ${preview}`;
+      }
     }
 
     const res = await fetch(GROQ_URL, {
