@@ -509,7 +509,7 @@ export default function App() {
   const deleteTrainer=(idx)=>{ if(trainers.length<=1){notify("Need at least 1 trainer","err");return;} setTrainers(trainers.filter((_,i)=>i!==idx)); };
 
   // ── GROQ CLOUD API KEY — use env var to avoid committing secrets ────────────
-  const GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY;
+  const GROQ_KEY = process.env.NEXT_PUBLIC_GROQ_API_KEY;
   const GROQ_URL = `https://api.groq.com/openai/v1/chat/completions`;
 
   const GYM_PERSONA = `You are a friendly, experienced gym business coach named Alex. You work closely with gym owners and speak like a real person — warm, direct, and practical. You use simple language, short sentences, and occasional emojis. You never sound robotic or give generic textbook answers. You always give specific, actionable advice based on the gym's actual data. You understand the Indian gym market well.`;
@@ -554,37 +554,34 @@ export default function App() {
   // ── Core Groq caller — used everywhere in the app ───────────────────────
   const geminiCall = async (prompt, systemOverride) => {
     const systemText = systemOverride || GYM_PERSONA;
-    const fullPrompt = `${systemText}\n\n${prompt}`;
-    // If the GROQ key is not set, provide a richer local fallback
-    if(!GROQ_KEY) {
-      console.warn("GROQ key missing — using richer local AI fallback");
+
+    try {
+      // Call the server-side /api/ai endpoint (reads GROQ_API_KEY from server env)
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt,
+          system: systemText,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "AI error " + res.status);
+      }
+      const d = await res.json();
+      return d.result || "No response";
+    } catch(err) {
+      // Fallback to local AI if server-side call fails
+      console.warn("Server-side AI failed, using local fallback:", err.message);
       try {
         return generateLocalAI(prompt, systemText);
-      } catch(err) {
-        const preview = (prompt||"").toString().slice(0,400);
-        return `Local AI (fallback): Groq API key not configured. Prompt preview: ${preview}`;
+      } catch(fbErr) {
+        return `Local AI (fallback): Unable to reach cloud model. Error: ${err.message}`;
       }
     }
-
-    const res = await fetch(GROQ_URL, {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${GROQ_KEY}`
-      },
-      body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
-        messages: [{ role: "user", content: fullPrompt }],
-        max_tokens: 1000,
-        temperature: 0.85,
-      }),
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error?.message || "Groq error " + res.status);
-    }
-    const d = await res.json();
-    return d.choices?.[0]?.message?.content || "No response";
   };
 
   // ── callAI — sets shared aiOutput (used by dashboard quick actions) ────────
